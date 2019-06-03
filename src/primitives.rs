@@ -1,15 +1,15 @@
-use requests;
-/*
-use bytes::Buf;
-use DecodeErrors::BadData;
+use super::requests;
 
-use requests;
+use crate::requests::RequestApiVersions;
+use bytes::Buf;
+use std::fmt::{Error, Formatter};
+use DecodeErrors::BadData;
 
 pub trait Message {
     fn get_size(&self) -> i32;
 }
 
-trait DecodableMessage: Message + FromByte {}
+pub trait DecodableMessage: Message + FromByte {}
 
 pub trait Request: DecodableMessage {
     fn get_header(&self) -> &HeaderRequest;
@@ -18,7 +18,7 @@ pub trait Request: DecodableMessage {
 pub trait Response: DecodableMessage {}
 
 ///////////////////////////////
-pub enum RequestApiVersions {
+pub enum ApiVersions {
     Version0,
     Version1,
     Version2,
@@ -31,19 +31,25 @@ pub enum DecodeErrors {
 }
 
 pub trait FromByte: Default {
+    type R: Default + FromByte;
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors>;
 
-    fn decode_new(buf: &mut Buf) -> Result<Self, DecodeErrors> {
+    fn decode_new(buf: &mut Buf) -> Result<RequestApiVersions, DecodeErrors> {
         //let mut temp: Self = Default::default();
-        let mut temp = requests::RequestApiVersions;
+        let mut temp = requests::RequestApiVersions {
+            size: 0,
+            header: HeaderRequest::default(),
+        };
         match temp.decode(buf) {
             Ok(_) => Ok(temp),
-            Err(e) => Err(e),
+            //Err(e) => Err(e),
+            Err(e) => Ok(temp),
         }
     }
 }
 
 impl FromByte for i32 {
+    type R = i32;
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         *self = buf.get_i32_be();
         Ok(())
@@ -51,6 +57,7 @@ impl FromByte for i32 {
 }
 
 impl FromByte for i16 {
+    type R = i16;
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         *self = buf.get_i16_be();
         Ok(())
@@ -58,6 +65,7 @@ impl FromByte for i16 {
 }
 
 impl FromByte for i8 {
+    type R = i8;
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         *self = buf.get_i8();
         Ok(())
@@ -97,7 +105,7 @@ pub struct NullableString<'a> {
 //}
 
 impl<'a> Default for NullableString<'a> {
-    fn default() -> Self {
+    fn default() -> NullableString<'static> {
         NullableString {
             length: -1,
             content: "",
@@ -106,6 +114,8 @@ impl<'a> Default for NullableString<'a> {
 }
 
 impl<'a> FromByte for NullableString<'a> {
+    type R = NullableString<'a>;
+
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         self.length.decode(buf);
         if self.length < -1 {
@@ -113,12 +123,15 @@ impl<'a> FromByte for NullableString<'a> {
         } else if self.length == 0 {
             self.content = "";
         } else {
+            /*
             let mut bytes = vec![0; self.length as usize];
             buf.copy_to_slice(&mut bytes);
             self.content = match std::str::from_utf8(&bytes) {
                 Ok(s) => s,
                 Err(e) => return Err(BadData),
             }
+            */
+            self.content = "skip read";
         }
         Ok(())
     }
@@ -126,41 +139,56 @@ impl<'a> FromByte for NullableString<'a> {
 
 // Reference: https://github.com/spicavigo/kafka-rust/blob/c58cf5f30b35fad6ab163416d51d2b99a30da9c2/src/protocol/mod.rs#L108
 #[derive(Debug)]
-pub struct HeaderRequest<'a> {
+pub struct HeaderRequest {
     pub api_key: i16,
     pub api_version: i16,
     pub correlation_id: i32,
-    pub client_id: &'a NullableString<'a>,
+    //pub client_id: &'a NullableString<'a>,
 }
 
-impl<'a> HeaderRequest<'a> {
+impl std::fmt::Display for HeaderRequest {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        println!(
+            "api_key: {}, api_version: {}, correlation_id: {}",
+            self.api_key, self.api_version, self.correlation_id,
+        );
+        Ok(())
+    }
+}
+
+impl HeaderRequest {
     fn new(
         api_key: i16,
         api_version: i16,
         correlation_id: i32,
-        client_id: &'a NullableString,
-    ) -> HeaderRequest<'a> {
+        //client_id: &'a NullableString,
+    ) -> HeaderRequest {
         HeaderRequest {
             api_key,
             api_version,
             correlation_id,
-            client_id,
+            //client_id,
         }
     }
 }
 
-impl<'a> Default for HeaderRequest<'a> {
+impl Default for HeaderRequest {
     fn default() -> Self {
-        Self::new(-1, -1, -1, &NullableString::default())
+        //Self::new(-1, -1, -1, &NullableString::default())
+        //let null_str_default = NullableString::default();
+        //Self::new(-1, -1, -1, &null_str_default)
+        Self::new(-1, -1, -1)
     }
 }
 
-impl<'a> FromByte for HeaderRequest<'a> {
+impl FromByte for HeaderRequest {
+    type R = HeaderRequest;
+
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         self.api_key.decode(buf);
         self.api_version.decode(buf);
         self.correlation_id.decode(buf);
-        self.client_id.decode(buf);
+        //self.client_id.decode(buf);
         Ok(())
     }
 }
@@ -191,4 +219,3 @@ enum ApiKeys {
     Metadata = 3,
     ApiVersions = 18,
 }
-*/
