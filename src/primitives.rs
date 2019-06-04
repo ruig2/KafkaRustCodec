@@ -6,8 +6,36 @@ use core::borrow::{Borrow, BorrowMut};
 use std::fmt::{Error, Formatter};
 use DecodeErrors::BadData;
 
+enum ApiKeys {
+    Metadata = 3,
+    ApiVersions = 18,
+}
+
+pub enum ApiVersions {
+    Version0,
+    Version1,
+    Version2,
+}
+
 pub trait Message {
     fn get_size(&self) -> i32;
+}
+
+pub trait FromByte: Default {
+    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors>;
+
+    fn decode_new(buf: &mut Buf) -> Result<RequestApiVersions, DecodeErrors> {
+        // How to get the specific request type dynamically?
+        let mut temp = requests::RequestApiVersions {
+            size: 0,
+            header: HeaderRequest::default(),
+        };
+        match temp.decode(buf) {
+            Ok(_) => Ok(temp),
+            //Err(e) => Err(e),
+            Err(e) => Ok(temp),
+        }
+    }
 }
 
 pub trait DecodableMessage: Message + FromByte {}
@@ -25,26 +53,7 @@ pub enum DecodeErrors {
     BadData,
 }
 
-pub trait FromByte: Default {
-    type R: Default + FromByte;
-    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors>;
-
-    fn decode_new(buf: &mut Buf) -> Result<RequestApiVersions, DecodeErrors> {
-        //let mut temp: Self = Default::default();
-        let mut temp = requests::RequestApiVersions {
-            size: 0,
-            header: HeaderRequest::default(),
-        };
-        match temp.decode(buf) {
-            Ok(_) => Ok(temp),
-            //Err(e) => Err(e),
-            Err(e) => Ok(temp),
-        }
-    }
-}
-
 impl FromByte for i8 {
-    type R = i8;
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         *self = buf.get_i8();
         Ok(())
@@ -52,7 +61,6 @@ impl FromByte for i8 {
 }
 
 impl FromByte for i16 {
-    type R = i16;
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         *self = buf.get_i16_be();
         Ok(())
@@ -60,7 +68,6 @@ impl FromByte for i16 {
 }
 
 impl FromByte for i32 {
-    type R = i32;
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         *self = buf.get_i32_be();
         Ok(())
@@ -68,8 +75,6 @@ impl FromByte for i32 {
 }
 
 impl FromByte for String {
-    type R = String;
-
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         let mut length: i16 = 0;
         length.decode(buf);
@@ -136,8 +141,6 @@ impl Default for HeaderRequest {
 }
 
 impl FromByte for HeaderRequest {
-    type R = HeaderRequest;
-
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         self.api_key.decode(buf);
         self.api_version.decode(buf);
@@ -156,15 +159,4 @@ impl HeaderResponse {
     fn new(correlation_id: i32) -> HeaderResponse {
         HeaderResponse { correlation_id }
     }
-}
-
-enum ApiKeys {
-    Metadata = 3,
-    ApiVersions = 18,
-}
-
-pub enum ApiVersions {
-    Version0,
-    Version1,
-    Version2,
 }
