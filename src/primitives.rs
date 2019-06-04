@@ -73,15 +73,21 @@ impl FromByte for String {
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         let mut length: i16 = 0;
         length.decode(buf);
-        if length <= 0 {
+        if length == 0 || length == -1 {
+            return Ok(());
+        }
+        if length < -1 {
+            // ToDo: throw error
             return Ok(());
         }
         self.reserve(length as usize);
         let mut temp_vec: Vec<u8> = vec![0; length as usize];
         buf.copy_to_slice(temp_vec.as_mut_slice());
+        // ToDo: throw error
         *self = String::from_utf8_lossy(temp_vec.as_ref()).parse().unwrap();
 
         if self.len() != length as usize {
+            // ToDo: throw error
             return Ok(());
         }
         Ok(())
