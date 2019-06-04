@@ -19,6 +19,7 @@ pub trait Request: DecodableMessage {
 
 pub trait Response: DecodableMessage {}
 
+#[derive(Debug)]
 pub enum DecodeErrors {
     BufferUnderflow,
     BufferOverflow,
