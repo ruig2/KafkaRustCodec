@@ -24,16 +24,11 @@ pub trait Message {
 pub trait FromByte: Default {
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors>;
 
-    fn decode_new(buf: &mut Buf) -> Result<RequestApiVersions, DecodeErrors> {
-        // How to get the specific request type dynamically?
-        let mut temp = requests::RequestApiVersions {
-            size: 0,
-            header: HeaderRequest::default(),
-        };
+    fn decode_new(buf: &mut Buf) -> Result<Self, DecodeErrors> {
+        let mut temp = Self::default();
         match temp.decode(buf) {
             Ok(_) => Ok(temp),
-            //Err(e) => Err(e),
-            Err(e) => Ok(temp),
+            Err(e) => Err(e),
         }
     }
 }
