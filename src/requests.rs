@@ -1,4 +1,6 @@
-use crate::primitives::{DecodeErrors, FromByte, HeaderRequest, Message};
+use crate::primitives::{
+    DecodableMessage, DecodeErrors, FromByte, HeaderRequest, Message, Request,
+};
 use bytes::Buf;
 use std::fmt::{Error, Formatter};
 
@@ -29,5 +31,13 @@ impl FromByte for RequestApiVersions {
         self.size.decode(buf);
         self.header.decode(buf);
         Ok(())
+    }
+}
+
+impl DecodableMessage for RequestApiVersions {}
+
+impl Request for RequestApiVersions {
+    fn get_header(&self) -> &HeaderRequest {
+        &self.header
     }
 }

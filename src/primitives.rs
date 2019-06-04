@@ -4,7 +4,6 @@ use crate::requests::RequestApiVersions;
 use bytes::Buf;
 use core::borrow::{Borrow, BorrowMut};
 use std::fmt::{Error, Formatter};
-use std::ptr::null;
 use DecodeErrors::BadData;
 
 pub trait Message {
@@ -104,7 +103,7 @@ pub struct HeaderRequest {
     pub client_id: String,
 }
 
-impl<'a> std::fmt::Display for HeaderRequest {
+impl std::fmt::Display for HeaderRequest {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         println!(
             "api_key: {}, api_version: {}, correlation_id: {}, client_id: {}",
