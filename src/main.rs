@@ -1,18 +1,20 @@
 use crate::primitives::{DecodeErrors, FromByte, HeaderRequest, Message, Request};
-use crate::requests::RequestApiVersions;
+use crate::requests::{RequestApiVersions, RequestApiVersions_2};
 use bytes::Buf;
 
 pub mod primitives;
 pub mod requests;
 
+// ToDo: assign the result to a reference in the parameter rather than return the entire Request
 pub fn decode_request(buf: &mut Buf) -> impl Request {
     let mut header = HeaderRequest::default();
     let mut len: i32 = 0;
     len.decode(buf);
     header.decode(buf);
     println!("{}", header);
-    //Err(DecodeErrors::BadData)
-    RequestApiVersions::default()
+
+    let mut req: RequestApiVersions = RequestApiVersions::default();
+    req
 }
 
 #[test]
