@@ -2,7 +2,9 @@ use super::requests;
 
 use crate::requests::RequestApiVersions;
 use bytes::Buf;
+use core::borrow::Borrow;
 use std::fmt::{Error, Formatter};
+use std::ptr::null;
 use DecodeErrors::BadData;
 
 pub trait Message {
@@ -16,13 +18,6 @@ pub trait Request: DecodableMessage {
 }
 
 pub trait Response: DecodableMessage {}
-
-///////////////////////////////
-pub enum ApiVersions {
-    Version0,
-    Version1,
-    Version2,
-}
 
 pub enum DecodeErrors {
     BufferUnderflow,
@@ -92,24 +87,24 @@ pub trait FromByte {
 #[derive(Debug)]
 pub struct NullableString<'a> {
     pub length: i16,
-    pub content: &'a str,
+    pub content: &'a String,
 }
 
-//impl<'a> NullableString<'a> {
-//    pub fn new(content: &'a str) -> Self {
-//        NullableString {
-//            length: str.length,
-//            content: str,
-//        }
-//    }
-//}
+impl<'a> std::fmt::Display for NullableString<'a> {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        print!("len: {}, str: {}", self.length, self.content.to_string());
+        Ok(())
+    }
+}
+
+const nullableStringDefault: NullableString = NullableString {
+    length: -1,
+    content: String { vec: vec![] }.borrow(),
+};
 
 impl<'a> Default for NullableString<'a> {
-    fn default() -> NullableString<'static> {
-        NullableString {
-            length: -1,
-            content: "",
-        }
+    fn default() -> Self {
+        nullableStringDefault
     }
 }
 
@@ -118,77 +113,72 @@ impl<'a> FromByte for NullableString<'a> {
 
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         self.length.decode(buf);
+        println!("decoded {} ", self.length);
+        /*
         if self.length < -1 {
             return Err(BadData);
         } else if self.length == 0 {
             self.content = "";
         } else {
-            /*
             let mut bytes = vec![0; self.length as usize];
             buf.copy_to_slice(&mut bytes);
-            self.content = match std::str::from_utf8(&bytes) {
-                Ok(s) => s,
-                Err(e) => return Err(BadData),
-            }
-            */
-            self.content = "skip read";
+            self.content = std::str::from_utf8(&bytes).unwrap();
         }
+        */
+        self.content = &String::from("error");
         Ok(())
     }
 }
 
 // Reference: https://github.com/spicavigo/kafka-rust/blob/c58cf5f30b35fad6ab163416d51d2b99a30da9c2/src/protocol/mod.rs#L108
 #[derive(Debug)]
-pub struct HeaderRequest {
+pub struct HeaderRequest<'a> {
     pub api_key: i16,
     pub api_version: i16,
     pub correlation_id: i32,
-    //pub client_id: &'a NullableString<'a>,
+    pub client_id: &'a mut NullableString<'a>,
 }
 
-impl std::fmt::Display for HeaderRequest {
+impl<'a> std::fmt::Display for HeaderRequest<'a> {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         println!(
-            "api_key: {}, api_version: {}, correlation_id: {}",
-            self.api_key, self.api_version, self.correlation_id,
+            "api_key: {}, api_version: {}, correlation_id: {}, client_id: {}",
+            self.api_key, self.api_version, self.correlation_id, self.client_id
         );
         Ok(())
     }
 }
 
-impl HeaderRequest {
+impl<'a> HeaderRequest<'a> {
     fn new(
         api_key: i16,
         api_version: i16,
         correlation_id: i32,
-        //client_id: &'a NullableString,
-    ) -> HeaderRequest {
+        client_id: &'a mut NullableString<'a>,
+    ) -> HeaderRequest<'a> {
         HeaderRequest {
             api_key,
             api_version,
             correlation_id,
-            //client_id,
+            client_id,
         }
     }
 }
 
-impl Default for HeaderRequest {
-    fn default() -> Self {
-        //Self::new(-1, -1, -1, &NullableString::default())
-        //let null_str_default = NullableString::default();
-        //Self::new(-1, -1, -1, &null_str_default)
-        Self::new(-1, -1, -1)
+impl<'a> Default for HeaderRequest<'a> {
+    fn default() -> HeaderRequest<'a> {
+        Self::new(-1, -1, -1, &mut nullableStringDefault)
     }
 }
 
-impl FromByte for HeaderRequest {
-    type R = HeaderRequest;
+impl<'a> FromByte for HeaderRequest<'a> {
+    type R = HeaderRequest<'a>;
 
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
         self.api_key.decode(buf);
         self.api_version.decode(buf);
         self.correlation_id.decode(buf);
-        //self.client_id.decode(buf);
+        self.client_id.decode(buf);
         Ok(())
     }
 }
@@ -204,18 +194,13 @@ impl HeaderResponse {
     }
 }
 
-//pub fn hello() {
-//    println!("hello");
-//}
-
-//fn main() {
-//    // The statements here will be executed when the compiled binary is called
-//
-//    // Print text to the console
-//    hello();
-//}
-
 enum ApiKeys {
     Metadata = 3,
     ApiVersions = 18,
+}
+
+pub enum ApiVersions {
+    Version0,
+    Version1,
+    Version2,
 }
