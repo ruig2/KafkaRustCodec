@@ -17,6 +17,13 @@ pub enum ApiVersions {
     Version2,
 }
 
+#[derive(Debug)]
+pub enum DecodeErrors {
+    BufferUnderflow,
+    BufferOverflow,
+    BadData,
+}
+
 pub trait Message {
     fn get_size(&self) -> i32;
 }
@@ -39,14 +46,8 @@ pub trait Request: DecodableMessage {
     fn get_header(&self) -> &HeaderRequest;
 }
 
+// Skip for now
 pub trait Response: DecodableMessage {}
-
-#[derive(Debug)]
-pub enum DecodeErrors {
-    BufferUnderflow,
-    BufferOverflow,
-    BadData,
-}
 
 impl FromByte for i8 {
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
@@ -76,11 +77,13 @@ impl FromByte for String {
         if length == 0 || length == -1 {
             return Ok(());
         }
+        // Length should not be smaller than -1 according to the Kafka protocol
         if length < -1 {
             // ToDo: throw error
             return Ok(());
         }
         self.reserve(length as usize);
+        // Any smart way to read a String from buffer?
         let mut temp_vec: Vec<u8> = vec![0; length as usize];
         buf.copy_to_slice(temp_vec.as_mut_slice());
         // ToDo: throw error
@@ -103,16 +106,6 @@ pub struct HeaderRequest {
     pub client_id: String,
 }
 
-impl std::fmt::Display for HeaderRequest {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
-        println!(
-            "api_key: {}, api_version: {}, correlation_id: {}, client_id: {}",
-            self.api_key, self.api_version, self.correlation_id, self.client_id
-        );
-        Ok(())
-    }
-}
-
 impl HeaderRequest {
     fn new(
         api_key: i16,
@@ -129,6 +122,16 @@ impl HeaderRequest {
     }
 }
 
+impl std::fmt::Display for HeaderRequest {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        println!(
+            "api_key: {}, api_version: {}, correlation_id: {}, client_id: {}",
+            self.api_key, self.api_version, self.correlation_id, self.client_id
+        );
+        Ok(())
+    }
+}
+
 impl Default for HeaderRequest {
     fn default() -> HeaderRequest {
         Self::new(-1, -1, -1, String::new())
@@ -137,6 +140,7 @@ impl Default for HeaderRequest {
 
 impl FromByte for HeaderRequest {
     fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
+        // ToDo: throw error if fails to decode
         self.api_key.decode(buf);
         self.api_version.decode(buf);
         self.correlation_id.decode(buf);
