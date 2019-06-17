@@ -1,4 +1,9 @@
-use crate::primitives::{DecodableMessage, DecodeError, FromByte, HeaderRequest, Message, Request};
+use num_derive::FromPrimitive;
+use num_traits::FromPrimitive;
+
+use crate::primitives::{
+    ApiKey, DecodableMessage, DecodeError, FromByte, HeaderRequest, Message, Request,
+};
 use bytes::Buf;
 use std::fmt::{Error, Formatter};
 
@@ -57,7 +62,7 @@ pub trait BodyRequest {}
 pub struct DecodedRequest {
     pub size: i32,
     pub header: HeaderRequest,
-    //pub body: Box<dyn BodyRequest>,
+    pub body: Box<dyn BodyRequest>,
 }
 
 pub trait TempFromByte: Sized {
@@ -86,12 +91,35 @@ impl TempFromByte for i16 {
     }
 }
 
+pub struct BodyApiVersionRequest {}
+
+impl BodyRequest for BodyApiVersionRequest {}
+impl TempFromByte for BodyApiVersionRequest {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        Ok((BodyApiVersionRequest {}))
+    }
+}
+
+pub struct MeatdataApiVersionRequest {}
+impl BodyRequest for MeatdataApiVersionRequest {}
+impl TempFromByte for MeatdataApiVersionRequest {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        Ok((MeatdataApiVersionRequest {}))
+    }
+}
+
 impl DecodedRequest {
     pub fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
-        Ok(DecodedRequest {
-            size: decode_buffer(buf)?,
-            header: decode_buffer(buf)?,
-        })
+        let size: i32 = decode_buffer(buf)?;
+        let header: HeaderRequest = decode_buffer(buf)?;
+
+        let body: Box<dyn BodyRequest> = match FromPrimitive::from_i16(header.api_key) {
+            Some(ApiKey::ApiVersions) => Box::new(BodyApiVersionRequest::decode(buf)?),
+            Some(ApiKey::Metadata) => Box::new(MeatdataApiVersionRequest::decode(buf)?),
+            _ => return Err(DecodeError::BadData),
+        };
+
+        Ok(DecodedRequest { size, header, body })
     }
 }
 

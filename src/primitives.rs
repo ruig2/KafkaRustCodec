@@ -1,4 +1,6 @@
 use super::requests;
+use num_derive::FromPrimitive;
+use num_traits::FromPrimitive;
 
 use crate::requests::{decode_buffer, RequestApiVersions, TempFromByte};
 use bytes::Buf;
@@ -6,7 +8,8 @@ use core::borrow::{Borrow, BorrowMut};
 use std::fmt::{Error, Formatter};
 use DecodeError::BadData;
 
-enum ApiKey {
+#[derive(FromPrimitive)]
+pub enum ApiKey {
     Metadata = 3,
     ApiVersions = 18,
 }
