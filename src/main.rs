@@ -1,12 +1,12 @@
-use crate::primitives::{DecodeErrors, FromByte, HeaderRequest, Message, Request};
-use crate::requests::RequestApiVersions;
+use crate::primitives::{DecodeError, FromByte, HeaderRequest, Message, Request};
+use crate::requests::{tempRequest, DecodedRequest, RequestApiVersions};
 use bytes::Buf;
 
 pub mod primitives;
 pub mod requests;
 
 // ToDo: Move to test
-fn main() -> Result<(), DecodeErrors> {
+fn main() {
     const KAFKA_REQUEST_API_VERSIONS: &[u8] = &[
         // Request/response Size => INT32
         0, 0, 0, 20, // value: 20
@@ -24,6 +24,7 @@ fn main() -> Result<(), DecodeErrors> {
     use std::io::Cursor;
 
     let mut buf = Cursor::new(KAFKA_REQUEST_API_VERSIONS);
+    /*
     RequestApiVersions::decode_new(&mut buf)
         .and_then({
             |req| {
@@ -32,5 +33,17 @@ fn main() -> Result<(), DecodeErrors> {
                 Ok(())
             }
         })
-        .or_else(|err| Err(err))
+        .or_else(|err| Err(err));
+    */
+
+    /*
+    let t = tempRequest::new();
+    DecodedRequest::new(
+        0,
+        HeaderRequest::new(5, 5, 5, String::from("123")),
+        Box::new(tempRequest::new()),
+    );
+    */
+
+    DecodedRequest::decode(&mut buf);
 }

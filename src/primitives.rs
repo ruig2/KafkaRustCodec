@@ -4,21 +4,21 @@ use crate::requests::RequestApiVersions;
 use bytes::Buf;
 use core::borrow::{Borrow, BorrowMut};
 use std::fmt::{Error, Formatter};
-use DecodeErrors::BadData;
+use DecodeError::BadData;
 
-enum ApiKeys {
+enum ApiKey {
     Metadata = 3,
     ApiVersions = 18,
 }
 
-pub enum ApiVersions {
+pub enum ApiVersion {
     Version0,
     Version1,
     Version2,
 }
 
 #[derive(Debug)]
-pub enum DecodeErrors {
+pub enum DecodeError {
     BufferUnderflow,
     BufferOverflow,
     BadData,
@@ -29,9 +29,9 @@ pub trait Message {
 }
 
 pub trait FromByte: Default {
-    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors>;
+    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeError>;
 
-    fn decode_new(buf: &mut Buf) -> Result<Self, DecodeErrors> {
+    fn decode_new(buf: &mut Buf) -> Result<Self, DecodeError> {
         let mut temp = Self::default();
         match temp.decode(buf) {
             Ok(_) => Ok(temp),
@@ -50,28 +50,28 @@ pub trait Request: DecodableMessage {
 pub trait Response: DecodableMessage {}
 
 impl FromByte for i8 {
-    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
+    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeError> {
         *self = buf.get_i8();
         Ok(())
     }
 }
 
 impl FromByte for i16 {
-    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
+    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeError> {
         *self = buf.get_i16_be();
         Ok(())
     }
 }
 
 impl FromByte for i32 {
-    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
+    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeError> {
         *self = buf.get_i32_be();
         Ok(())
     }
 }
 
 impl FromByte for String {
-    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
+    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeError> {
         let mut length: i16 = 0;
         length.decode(buf);
         if length == 0 || length == -1 {
@@ -107,7 +107,7 @@ pub struct HeaderRequest {
 }
 
 impl HeaderRequest {
-    fn new(
+    pub fn new(
         api_key: i16,
         api_version: i16,
         correlation_id: i32,
@@ -139,7 +139,7 @@ impl Default for HeaderRequest {
 }
 
 impl FromByte for HeaderRequest {
-    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeErrors> {
+    fn decode(&mut self, buf: &mut Buf) -> Result<(), DecodeError> {
         // ToDo: throw error if fails to decode
         self.api_key.decode(buf);
         self.api_version.decode(buf);
