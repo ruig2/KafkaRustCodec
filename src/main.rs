@@ -45,5 +45,11 @@ fn main() {
     );
     */
 
-    DecodedRequest::decode(&mut buf);
+    DecodedRequest::decode(&mut buf).and_then({
+        |req| {
+            println!("req.size: {}", req.size);
+            println!("req.header: {}", req.header);
+            Ok(())
+        }
+    });
 }

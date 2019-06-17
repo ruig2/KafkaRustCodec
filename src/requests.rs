@@ -56,7 +56,7 @@ pub trait BodyRequest {}
 
 pub struct DecodedRequest {
     pub size: i32,
-    //pub header: HeaderRequest,
+    pub header: HeaderRequest,
     //pub body: Box<dyn BodyRequest>,
 }
 
@@ -77,14 +77,20 @@ impl TempFromByte for i32 {
     }
 }
 
-impl DecodedRequest {
-    //pub fn new(size: i32, header: HeaderRequest, body: Box<BodyRequest>) -> DecodedRequest {
-    //    DecodedRequest { size, header, body }
-    //}
+impl TempFromByte for i16 {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        if buf.remaining() < 4 {
+            //Err(DecodeError::BufferUnderflow);
+        }
+        Ok((buf.get_i16_be()))
+    }
+}
 
+impl DecodedRequest {
     pub fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
         Ok(DecodedRequest {
             size: decode_buffer(buf)?,
+            header: decode_buffer(buf)?,
         })
     }
 }

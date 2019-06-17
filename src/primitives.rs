@@ -1,6 +1,6 @@
 use super::requests;
 
-use crate::requests::RequestApiVersions;
+use crate::requests::{decode_buffer, RequestApiVersions, TempFromByte};
 use bytes::Buf;
 use core::borrow::{Borrow, BorrowMut};
 use std::fmt::{Error, Formatter};
@@ -146,6 +146,43 @@ impl FromByte for HeaderRequest {
         self.correlation_id.decode(buf);
         self.client_id.decode(buf);
         Ok(())
+    }
+}
+
+impl TempFromByte for String {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        let length: i16 = decode_buffer(buf)?;
+        if length == 0 || length == -1 {
+            return Ok(String::from(""));
+        }
+        // Length should not be smaller than -1 according to the Kafka protocol
+        if length < -1 {
+            // ToDo: throw error
+            // return Ok(());
+        }
+        // Any smart way to read a String from buffer?
+        let mut temp_vec: Vec<u8> = vec![0; length as usize];
+        buf.copy_to_slice(temp_vec.as_mut_slice());
+        // ToDo: throw error
+
+        let result: String = String::from_utf8(temp_vec).unwrap();
+
+        if result.len() != length as usize {
+            // ToDo: throw error
+            //return Ok(());
+        }
+        Ok(result)
+    }
+}
+
+impl TempFromByte for HeaderRequest {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        Ok(HeaderRequest {
+            api_key: decode_buffer(buf)?,
+            api_version: decode_buffer(buf)?,
+            correlation_id: decode_buffer(buf)?,
+            client_id: decode_buffer(buf)?,
+        })
     }
 }
 
