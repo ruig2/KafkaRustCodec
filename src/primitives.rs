@@ -32,22 +32,6 @@ pub struct HeaderRequest {
     pub client_id: String,
 }
 
-impl HeaderRequest {
-    fn new(
-        api_key: i16,
-        api_version: i16,
-        correlation_id: i32,
-        client_id: String,
-    ) -> HeaderRequest {
-        HeaderRequest {
-            api_key,
-            api_version,
-            correlation_id,
-            client_id,
-        }
-    }
-}
-
 impl std::fmt::Display for HeaderRequest {
     fn fmt(&self, _: &mut Formatter) -> Result<(), Error> {
         println!(
@@ -69,15 +53,9 @@ impl FromByte for HeaderRequest {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct HeaderResponse {
     pub correlation_id: i32,
-}
-
-impl HeaderResponse {
-    fn new(correlation_id: i32) -> HeaderResponse {
-        HeaderResponse { correlation_id }
-    }
 }
 
 pub trait BodyRequest {}

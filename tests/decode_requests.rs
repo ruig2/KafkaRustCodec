@@ -1,4 +1,6 @@
-use kafka_codec::primitives::{DecodeError, DecodedRequest, HeaderRequest};
+use kafka_codec::primitives::{BodyRequest, DecodeError, DecodedRequest, HeaderRequest};
+use kafka_codec::requests::BodyApiVersionRequest;
+use std::any::Any;
 
 #[test]
 fn decode_request_api_version() -> Result<(), DecodeError> {
@@ -18,6 +20,7 @@ fn decode_request_api_version() -> Result<(), DecodeError> {
     use std::io::Cursor;
     let mut buf = Cursor::new(KAFKA_REQUEST_API_VERSIONS);
     let request = DecodedRequest::decode(&mut buf)?;
+
     assert_eq!(20, request.size);
     assert_eq!(
         HeaderRequest {
@@ -28,5 +31,10 @@ fn decode_request_api_version() -> Result<(), DecodeError> {
         },
         request.header
     );
+    // Reference to cast the box to the original struct:
+    // https://stackoverflow.com/questions/33687447/how-to-get-a-reference-to-a-concrete-type-from-a-trait-object/33687996#33687996
+    // The example works in the web page but currently, I don't understand.
+    //assert_eq!(BodyApiVersionRequest {}, *body);
+
     Ok(())
 }
