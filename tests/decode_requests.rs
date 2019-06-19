@@ -1,5 +1,4 @@
-use kafka_codec::primitives::{DecodeError, HeaderRequest};
-use kafka_codec::requests::DecodedRequest;
+use kafka_codec::primitives::{DecodeError, DecodedRequest, HeaderRequest};
 
 #[test]
 fn decode_request_api_version() -> Result<(), DecodeError> {

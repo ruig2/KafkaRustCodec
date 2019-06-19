@@ -1,7 +1,7 @@
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 
-use crate::requests::{decode_buffer, FromByte};
+use crate::requests::{BodyApiVersionRequest, BodyMeatdataApiVersionRequest};
 use bytes::Buf;
 use std::fmt::{Error, Formatter};
 
@@ -33,7 +33,7 @@ pub struct HeaderRequest {
 }
 
 impl HeaderRequest {
-    pub fn new(
+    fn new(
         api_key: i16,
         api_version: i16,
         correlation_id: i32,
@@ -49,12 +49,78 @@ impl HeaderRequest {
 }
 
 impl std::fmt::Display for HeaderRequest {
-    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+    fn fmt(&self, _: &mut Formatter) -> Result<(), Error> {
         println!(
             "api_key: {}, api_version: {}, correlation_id: {}, client_id: {}",
             self.api_key, self.api_version, self.correlation_id, self.client_id
         );
         Ok(())
+    }
+}
+
+impl FromByte for HeaderRequest {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        Ok(HeaderRequest {
+            api_key: decode_buffer(buf)?,
+            api_version: decode_buffer(buf)?,
+            correlation_id: decode_buffer(buf)?,
+            client_id: decode_buffer(buf)?,
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct HeaderResponse {
+    pub correlation_id: i32,
+}
+
+impl HeaderResponse {
+    fn new(correlation_id: i32) -> HeaderResponse {
+        HeaderResponse { correlation_id }
+    }
+}
+
+pub trait BodyRequest {}
+pub struct DecodedRequest {
+    pub size: i32,
+    pub header: HeaderRequest,
+    pub body: Box<dyn BodyRequest>,
+}
+
+impl DecodedRequest {
+    pub fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        let size: i32 = decode_buffer(buf)?;
+        let header: HeaderRequest = decode_buffer(buf)?;
+
+        let body: Box<dyn BodyRequest> = match FromPrimitive::from_i16(header.api_key) {
+            Some(ApiKey::ApiVersions) => Box::new(BodyApiVersionRequest::decode(buf)?),
+            Some(ApiKey::Metadata) => Box::new(BodyMeatdataApiVersionRequest::decode(buf)?),
+            _ => return Err(DecodeError::BadData),
+        };
+
+        Ok(DecodedRequest { size, header, body })
+    }
+}
+
+pub trait FromByte: Sized {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError>;
+}
+
+impl FromByte for i32 {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        if buf.remaining() < 4 {
+            //Err(DecodeError::BufferUnderflow);
+        }
+        Ok(buf.get_i32_be())
+    }
+}
+
+impl FromByte for i16 {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        if buf.remaining() < 4 {
+            //Err(DecodeError::BufferUnderflow);
+        }
+        Ok(buf.get_i16_be())
     }
 }
 
@@ -84,24 +150,6 @@ impl FromByte for String {
     }
 }
 
-impl FromByte for HeaderRequest {
-    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
-        Ok(HeaderRequest {
-            api_key: decode_buffer(buf)?,
-            api_version: decode_buffer(buf)?,
-            correlation_id: decode_buffer(buf)?,
-            client_id: decode_buffer(buf)?,
-        })
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct HeaderResponse {
-    pub correlation_id: i32,
-}
-
-impl HeaderResponse {
-    fn new(correlation_id: i32) -> HeaderResponse {
-        HeaderResponse { correlation_id }
-    }
+pub fn decode_buffer<F: FromByte>(buf: &mut Buf) -> Result<F, DecodeError> {
+    FromByte::decode(buf)
 }
