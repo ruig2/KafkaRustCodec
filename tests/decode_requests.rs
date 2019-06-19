@@ -1,10 +1,8 @@
-use crate::requests::DecodedRequest;
+use kafka_codec::primitives::{DecodeError, HeaderRequest};
+use kafka_codec::requests::DecodedRequest;
 
-pub mod primitives;
-pub mod requests;
-
-// ToDo: Move to test
-fn main() {
+#[test]
+fn decode_request_api_version() -> Result<(), DecodeError> {
     const KAFKA_REQUEST_API_VERSIONS: &[u8] = &[
         // Request/response Size => INT32
         0, 0, 0, 20, // value: 20
@@ -18,15 +16,18 @@ fn main() {
         0, 10, 99, 111, 110, 115, 117, 109, 101, 114, 45, 49, // len: 10, value: consumer-1
     ];
 
-    use bytes::Buf;
     use std::io::Cursor;
-
     let mut buf = Cursor::new(KAFKA_REQUEST_API_VERSIONS);
-    DecodedRequest::decode(&mut buf).and_then({
-        |req| {
-            println!("req.size: {}", req.size);
-            println!("req.header: {}", req.header);
-            Ok(())
-        }
-    });
+    let request = DecodedRequest::decode(&mut buf)?;
+    assert_eq!(20, request.size);
+    assert_eq!(
+        HeaderRequest {
+            api_key: 18,
+            api_version: 2,
+            correlation_id: 1,
+            client_id: String::from("consumer-1")
+        },
+        request.header
+    );
+    Ok(())
 }
