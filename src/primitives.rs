@@ -58,12 +58,6 @@ impl std::fmt::Display for HeaderRequest {
     }
 }
 
-impl Default for HeaderRequest {
-    fn default() -> HeaderRequest {
-        Self::new(-1, -1, -1, String::new())
-    }
-}
-
 impl FromByte for String {
     fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
         let length: i16 = decode_buffer(buf)?;
@@ -101,7 +95,7 @@ impl FromByte for HeaderRequest {
     }
 }
 
-#[derive(Default, Debug, Clone)]
+#[derive(Debug, Clone)]
 pub struct HeaderResponse {
     pub correlation_id: i32,
 }
