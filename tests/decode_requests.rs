@@ -31,10 +31,10 @@ fn decode_request_api_version() -> Result<(), DecodeError> {
         },
         request.header
     );
-    // Reference to cast the box to the original struct:
-    // https://stackoverflow.com/questions/33687447/how-to-get-a-reference-to-a-concrete-type-from-a-trait-object/33687996#33687996
-    // The example works in the web page but currently, I don't understand.
-    //assert_eq!(BodyApiVersionRequest {}, *body);
+    assert_eq!(
+        BodyRequest::ApiVersions(BodyApiVersionRequest {}),
+        request.body
+    );
 
     Ok(())
 }

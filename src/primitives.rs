@@ -1,7 +1,7 @@
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 
-use crate::requests::{BodyApiVersionRequest, BodyMeatdataApiVersionRequest};
+use crate::requests::{BodyApiVersionRequest, BodyMetadataRequest};
 use bytes::Buf;
 use std::fmt::{Error, Formatter};
 
@@ -58,11 +58,16 @@ pub struct HeaderResponse {
     pub correlation_id: i32,
 }
 
-pub trait BodyRequest {}
+#[derive(PartialEq, Debug)]
+pub enum BodyRequest {
+    ApiVersions(BodyApiVersionRequest),
+    Metadata(BodyMetadataRequest),
+}
+
 pub struct DecodedRequest {
     pub size: i32,
     pub header: HeaderRequest,
-    pub body: Box<dyn BodyRequest>,
+    pub body: BodyRequest,
 }
 
 impl DecodedRequest {
@@ -70,9 +75,9 @@ impl DecodedRequest {
         let size: i32 = decode_buffer(buf)?;
         let header: HeaderRequest = decode_buffer(buf)?;
 
-        let body: Box<dyn BodyRequest> = match FromPrimitive::from_i16(header.api_key) {
-            Some(ApiKey::ApiVersions) => Box::new(BodyApiVersionRequest::decode(buf)?),
-            Some(ApiKey::Metadata) => Box::new(BodyMeatdataApiVersionRequest::decode(buf)?),
+        let body: BodyRequest = match FromPrimitive::from_i16(header.api_key) {
+            Some(ApiKey::ApiVersions) => BodyRequest::ApiVersions(decode_buffer(buf)?),
+            Some(ApiKey::Metadata) => BodyRequest::Metadata(decode_buffer(buf)?),
             _ => return Err(DecodeError::BadData),
         };
 
