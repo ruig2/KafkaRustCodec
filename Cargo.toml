@@ -1,7 +1,14 @@
 [package]
-name = "hello_world"
+name = "kafka_rust_codec"
 version = "0.1.0"
 authors = ["Rui Guo <ruig2@uci.edu>"]
 edition = "2018"
 
 [dependencies]
+bytes = "0.4"
+num-traits = "0.2"
+num-derive = "0.2"
+
+[lib]
+name = "kafka_codec"
+path = "src/lib.rs"
