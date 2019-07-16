@@ -11,18 +11,10 @@ pub enum ApiKey {
     ApiVersions = 18,
 }
 
-// ToDo: rust doesn't fully support C-style enumerate,
-// and I have trouble converting i16 to enum type
-#[repr(i16)]
 pub enum ApiVersion {
-    Version0 = 0,
-    Version1 = 1,
-    Version2 = 2,
-    Version3 = 3,
-    Version4 = 4,
-    Version5 = 5,
-    Version6 = 6,
-    Version7 = 7,
+    Version0,
+    Version1,
+    Version2,
 }
 
 #[derive(Debug)]
@@ -101,15 +93,6 @@ pub trait FromByte: Sized {
     fn decode(buf: &mut Buf) -> Result<Self, DecodeError>;
 }
 
-impl FromByte for i16 {
-    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
-        if buf.remaining() < 2 {
-            //Err(DecodeError::BufferUnderflow);
-        }
-        Ok(buf.get_i16_be())
-    }
-}
-
 impl FromByte for i32 {
     fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
         if buf.remaining() < 4 {
@@ -119,12 +102,21 @@ impl FromByte for i32 {
     }
 }
 
+impl FromByte for i16 {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        if buf.remaining() < 4 {
+            //Err(DecodeError::BufferUnderflow);
+        }
+        Ok(buf.get_i16_be())
+    }
+}
+
 impl FromByte for bool {
     fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
         if buf.remaining() < 1 {
             //Err(DecodeError::BufferUnderflow);
         }
-        Ok(buf.get_i8() != 0)
+        Ok(buf.get_i8() == 1)
     }
 }
 
@@ -154,18 +146,29 @@ impl FromByte for String {
     }
 }
 
+impl FromByte for Vec<String> {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        let num: i32 = decode_buffer(buf)?;
+        let mut result: Vec<String> = Vec::new();
+
+        for i in 0..num {
+            result.push(decode_buffer(buf)?);
+        }
+        Ok(result)
+    }
+}
+
 pub fn decode_buffer<F: FromByte>(buf: &mut Buf) -> Result<F, DecodeError> {
     FromByte::decode(buf)
 }
 
 pub trait FromByteWithVersion: Sized {
-    // ToDo: how to convert i16 to enum type ApiVersion?
-    fn decode_with_version(buf: &mut Buf, api_version: i16) -> Result<Self, DecodeError>;
+    fn decode_with_version(buf: &mut Buf, version: i16) -> Result<Self, DecodeError>;
 }
 
 pub fn decode_buffer_with_version<F: FromByteWithVersion>(
     buf: &mut Buf,
-    api_version: i16,
+    version: i16,
 ) -> Result<F, DecodeError> {
-    FromByteWithVersion::decode_with_version(buf, api_version)
+    FromByteWithVersion::decode_with_version(buf, version)
 }

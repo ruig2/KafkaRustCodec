@@ -51,8 +51,10 @@ fn decode_request_metadata() -> Result<(), DecodeError> {
         0, 0, 0, 1, // value: 1
         // client_id => NULLABLE_STRING
         0, 10, 99, 111, 110, 115, 117, 109, 101, 114, 45, 49, // len: 10, value: consumer-1
-        // topics => STRING
+        // topics => array of STRING
+        0, 0, 0, 2, // length of array: 2
         0, 2, 72, 105, // value: "Hi"
+        0, 2, 79, 107, // value: "Ok"
     ];
 
     use std::io::Cursor;

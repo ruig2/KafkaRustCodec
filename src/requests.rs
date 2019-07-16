@@ -13,19 +13,19 @@ impl FromByteWithVersion for BodyApiVersionRequest {
 
 #[derive(PartialEq, Debug)]
 pub struct BodyMetadataRequest {
-    pub topics: String,
+    pub topics: Vec<String>,
     pub allow_auto_topic_creation: bool,
 }
 impl FromByteWithVersion for BodyMetadataRequest {
     fn decode_with_version(buf: &mut Buf, api_version: i16) -> Result<Self, DecodeError> {
         if api_version <= 3 {
             Ok(BodyMetadataRequest {
-                topics: decode_buffer(buf).unwrap_or(String::from("")),
+                topics: decode_buffer(buf)?,
                 allow_auto_topic_creation: false,
             })
         } else {
             Ok(BodyMetadataRequest {
-                topics: decode_buffer(buf).unwrap_or(String::from("")),
+                topics: decode_buffer(buf)?,
                 allow_auto_topic_creation: decode_buffer(buf)?,
             })
         }
