@@ -71,7 +71,10 @@ pub struct DecodedRequest {
 }
 
 impl DecodedRequest {
-    pub fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+    pub fn decode(unmut_buf: &[u8]) -> Result<Self, DecodeError> {
+        use std::io::Cursor;
+        let buf = &mut Cursor::new(unmut_buf);
+
         let size: i32 = decode_buffer(buf)?;
         let header: HeaderRequest = decode_buffer(buf)?;
 

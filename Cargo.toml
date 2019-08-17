@@ -1,5 +1,5 @@
 [package]
-name = "kafka_rust_codec"
+name = "kafka_codec"
 version = "0.1.0"
 authors = ["Rui Guo <ruig2@uci.edu>"]
 edition = "2018"

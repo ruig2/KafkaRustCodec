@@ -16,9 +16,7 @@ fn decode_request_api_version() -> Result<(), DecodeError> {
         0, 10, 99, 111, 110, 115, 117, 109, 101, 114, 45, 49, // len: 10, value: consumer-1
     ];
 
-    use std::io::Cursor;
-    let mut buf = Cursor::new(KAFKA_REQUEST_API_VERSIONS);
-    let request = DecodedRequest::decode(&mut buf)?;
+    let request = DecodedRequest::decode(KAFKA_REQUEST_API_VERSIONS)?;
 
     assert_eq!(20, request.size);
     assert_eq!(
