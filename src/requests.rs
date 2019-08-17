@@ -31,3 +31,11 @@ impl FromByteWithVersion for BodyMetadataRequest {
         }
     }
 }
+
+#[derive(PartialEq, Debug)]
+pub struct BodyUnsupported {}
+impl FromByteWithVersion for BodyUnsupported {
+    fn decode_with_version(_: &mut Buf, _: i16) -> Result<Self, DecodeError> {
+        Ok(BodyUnsupported {})
+    }
+}

@@ -1,7 +1,7 @@
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 
-use crate::requests::{BodyApiVersionRequest, BodyMetadataRequest};
+use crate::requests::{BodyApiVersionRequest, BodyMetadataRequest, BodyUnsupported};
 use bytes::Buf;
 use std::fmt::{Error, Formatter};
 
@@ -62,6 +62,7 @@ pub struct HeaderResponse {
 pub enum BodyRequest {
     ApiVersions(BodyApiVersionRequest),
     Metadata(BodyMetadataRequest),
+    Unsupported(BodyUnsupported),
 }
 
 pub struct DecodedRequest {
