@@ -33,12 +33,12 @@ pub struct HeaderRequest {
 }
 
 impl std::fmt::Display for HeaderRequest {
-    fn fmt(&self, _: &mut Formatter) -> Result<(), Error> {
-        println!(
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(
+            f,
             "api_key: {}, api_version: {}, correlation_id: {}, client_id: {}",
             self.api_key, self.api_version, self.correlation_id, self.client_id
-        );
-        Ok(())
+        )
     }
 }
 
