@@ -42,7 +42,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "kafka_rust_codec"
+name = "kafka_codec"
 version = "0.1.0"
 dependencies = [
  "bytes 0.4.12 (registry+https://github.com/rust-lang/crates.io-index)",
