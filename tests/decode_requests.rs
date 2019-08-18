@@ -56,8 +56,7 @@ fn decode_request_metadata() -> Result<(), DecodeError> {
     ];
 
     use std::io::Cursor;
-    let mut buf = Cursor::new(KAFKA_REQUEST_METADATA);
-    let request = DecodedRequest::decode(&mut buf)?;
+    let request = DecodedRequest::decode(KAFKA_REQUEST_METADATA)?;
 
     assert_eq!(24, request.size);
     assert_eq!(
@@ -73,7 +72,7 @@ fn decode_request_metadata() -> Result<(), DecodeError> {
         BodyRequest::Metadata(BodyMetadataRequest {
             // ToDo: If we make 'topics' field private, then it cannot be tested here,
             // how to fix this elegantly?
-            topics: String::from("Hi"),
+            topics: vec![String::from("Hi")],
             allow_auto_topic_creation: false
         }),
         request.body

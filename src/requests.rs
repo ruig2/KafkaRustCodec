@@ -33,9 +33,9 @@ impl FromByteWithVersion for BodyMetadataRequest {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct BodyUnsupported {}
-impl FromByteWithVersion for BodyUnsupported {
+pub struct BodyUnsupportedRequest {}
+impl FromByteWithVersion for BodyUnsupportedRequest {
     fn decode_with_version(_: &mut Buf, _: i16) -> Result<Self, DecodeError> {
-        Ok(BodyUnsupported {})
+        Ok(BodyUnsupportedRequest {})
     }
 }

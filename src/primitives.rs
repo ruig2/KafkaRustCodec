@@ -1,7 +1,8 @@
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 
-use crate::requests::{BodyApiVersionRequest, BodyMetadataRequest, BodyUnsupported};
+use crate::requests::{BodyApiVersionRequest, BodyMetadataRequest, BodyUnsupportedRequest};
+use crate::responses::BodyUnsupportedResponse;
 use bytes::Buf;
 use std::fmt::{Error, Formatter};
 
@@ -53,16 +54,11 @@ impl FromByte for HeaderRequest {
     }
 }
 
-#[derive(Debug)]
-pub struct HeaderResponse {
-    pub correlation_id: i32,
-}
-
 #[derive(PartialEq, Debug)]
 pub enum BodyRequest {
     ApiVersions(BodyApiVersionRequest),
     Metadata(BodyMetadataRequest),
-    Unsupported(BodyUnsupported),
+    Unsupported(BodyUnsupportedRequest),
 }
 
 pub struct DecodedRequest {
@@ -90,6 +86,50 @@ impl DecodedRequest {
         };
 
         Ok(DecodedRequest { size, header, body })
+    }
+}
+
+#[derive(Debug)]
+pub struct HeaderResponse {
+    pub correlation_id: i32,
+}
+
+impl std::fmt::Display for HeaderResponse {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(f, "correlation_id: {}", self.correlation_id,)
+    }
+}
+
+impl FromByte for HeaderResponse {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        Ok(HeaderResponse {
+            correlation_id: decode_buffer(buf)?,
+        })
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum BodyResponse {
+    Unsupported(BodyUnsupportedResponse),
+}
+
+pub struct DecodedResponse {
+    pub size: i32,
+    pub header: HeaderResponse,
+    pub body: BodyResponse,
+}
+
+impl DecodedResponse {
+    pub fn decode(unmut_buf: &[u8]) -> Result<Self, DecodeError> {
+        use std::io::Cursor;
+        let buf = &mut Cursor::new(unmut_buf);
+
+        let size: i32 = decode_buffer(buf)?;
+        let header: HeaderResponse = decode_buffer(buf)?;
+
+        let body: BodyResponse = BodyResponse::Unsupported(BodyUnsupportedResponse {});
+
+        Ok(DecodedResponse { size, header, body })
     }
 }
 
