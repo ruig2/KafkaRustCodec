@@ -120,6 +120,6 @@ And a Prometheus report for Kafka will be wonderful.
 
 Special thanks to the nice mentors Eliza Weisman and Thomas Rampelberg for their patience and nice instructions. I didn't know much about Rust, Kafka and Kubernetes before I join this GSoC project and I learnt a lot in this summer.
 
-Thanks the Linkerd community for supporting.
+Thanks to the Linkerd community for supporting.
 
-And lastly, thanks Google for this wonderful journey.
+And lastly, thanks to Google for this wonderful journey.
