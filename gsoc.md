@@ -18,7 +18,7 @@ This project aims to
 
 ## Achievements
 
-In this section we will describe the achievements of the project in three parts.
+In this section, we will describe the achievements of the project in three parts.
 
 ### Kafka Codec
 
@@ -35,7 +35,7 @@ The architecture of a Kafka request is in Figure 1 where the `RequestBody` type 
 Figure 1: Architecture of the Kafka
 
 Note that each option of the `RequestBody` enumerate type is a specific Kafka request such as the metadata request ([related code](BodyMetadataRequest), and [related Kafka protocol](https://kafka.apache.org/protocol.html#The_Messages_Metadata)).
-What's more, the `FromByte` trait is implement in each Kafka types. For instance, primitive types such as `i32` or more complicated types such as `HeaderRequest` all implement such a trait so that the buffer can be decoded in a smart and elegant way.
+What's more, the `FromByte` trait is implemented in each Kafka types. For instance, primitive types such as `i32` or more complicated types such as `HeaderRequest` all implement such a trait so that the buffer can be decoded in a smart and elegant way.
 A good example is the `HeaderRequest` ([related code](https://github.com/ruig2/KafkaRustCodec/blob/980ba0d6d886fb9b1fe032e86558d9dd1c75f1a7/src/primitives.rs#L46-L55)) where you just need to call `decode_buffer(buf)` sequentially and no need to care about the type of the primitives to be decoded.
 
 When parsing a Kafka traffic, the first a few bytes in the buffer are peeked and the request header will be decoded. If everything fine, e.g. request size is reasonable and the API key is in the protocol, then the traffic will be judged as of Kafka protocol. Later, the header and body will be analyzed accordingly, and a `DecodedRequest` or `DecodedResponse` variable will be returned to the codec caller.
@@ -56,7 +56,7 @@ To solve this issue, a state is added in the `KafkaIo` to remember which part of
 
 ### Metrics Creation
 
-Currently, the size, header and type of the request/response will be printed into the console and log when running the proxy.
+Currently, the size, header, and type of the request/response will be printed into the console and log when running the proxy.
 More detailed metrics and more way to present the metrics are listed in the future work.
 
 ## How to run the codes
@@ -91,7 +91,7 @@ This [StackOverflow page](https://stackoverflow.com/questions/9808560/why-do-we-
 
 ### Linkerd cannot be compiled
 
-One of the reason that Linkerd cannot be compiled is the NodeJS version is too old ([related Slack discussion](https://linkerd.slack.com/archives/CGR48L815/p1565182864031900?thread_ts=1565120061.030900&cid=CGR48L815)).
+One of the reasons that Linkerd cannot be compiled is the NodeJS version is too old ([related Slack discussion](https://linkerd.slack.com/archives/CGR48L815/p1565182864031900?thread_ts=1565120061.030900&cid=CGR48L815)).
 There is not be an error message for this and you may wait for a long long time waiting for the compile without any progress.
 
 ## Future Work
@@ -118,7 +118,7 @@ And a Prometheus report for Kafka will be wonderful.
 
 ## Acknowledge
 
-Special thanks to the nice mentors Eliza Weisman and Thomas Rampelberg for their patience and nice instructions. I didn't know much about Rust, Kafka and Kubernetes before I join this GSoC project and I learnt a lot in this summer.
+Special thanks to the nice mentors Eliza Weisman and Thomas Rampelberg for their patience and nice instructions. I didn't know much about Rust, Kafka, and Kubernetes before I joined this GSoC project and I learned a lot this summer.
 
 Thanks to the Linkerd community for supporting.
 
