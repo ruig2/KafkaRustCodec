@@ -1,18 +1,41 @@
-use crate::primitives::{BodyRequest, DecodeError, FromByte};
+use crate::primitives::{
+    decode_buffer, ApiVersion, BodyRequest, DecodeError, FromByte, FromByteWithVersion,
+};
 use bytes::Buf;
 
 #[derive(PartialEq, Debug)]
 pub struct BodyApiVersionRequest {}
-impl FromByte for BodyApiVersionRequest {
-    fn decode(_: &mut Buf) -> Result<Self, DecodeError> {
+impl FromByteWithVersion for BodyApiVersionRequest {
+    fn decode_with_version(_: &mut Buf, _: i16) -> Result<Self, DecodeError> {
         Ok(BodyApiVersionRequest {})
     }
 }
 
 #[derive(PartialEq, Debug)]
-pub struct BodyMetadataRequest {}
-impl FromByte for BodyMetadataRequest {
-    fn decode(_: &mut Buf) -> Result<Self, DecodeError> {
-        Ok(BodyMetadataRequest {})
+pub struct BodyMetadataRequest {
+    pub topics: Vec<String>,
+    pub allow_auto_topic_creation: bool,
+}
+impl FromByteWithVersion for BodyMetadataRequest {
+    fn decode_with_version(buf: &mut Buf, api_version: i16) -> Result<Self, DecodeError> {
+        if api_version <= 3 {
+            Ok(BodyMetadataRequest {
+                topics: decode_buffer(buf)?,
+                allow_auto_topic_creation: false,
+            })
+        } else {
+            Ok(BodyMetadataRequest {
+                topics: decode_buffer(buf)?,
+                allow_auto_topic_creation: decode_buffer(buf)?,
+            })
+        }
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub struct BodyUnsupportedRequest {}
+impl FromByteWithVersion for BodyUnsupportedRequest {
+    fn decode_with_version(_: &mut Buf, _: i16) -> Result<Self, DecodeError> {
+        Ok(BodyUnsupportedRequest {})
     }
 }

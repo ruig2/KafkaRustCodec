@@ -1,7 +1,8 @@
 use num_derive::FromPrimitive;
 use num_traits::FromPrimitive;
 
-use crate::requests::{BodyApiVersionRequest, BodyMetadataRequest};
+use crate::requests::{BodyApiVersionRequest, BodyMetadataRequest, BodyUnsupportedRequest};
+use crate::responses::BodyUnsupportedResponse;
 use bytes::Buf;
 use std::fmt::{Error, Formatter};
 
@@ -33,12 +34,12 @@ pub struct HeaderRequest {
 }
 
 impl std::fmt::Display for HeaderRequest {
-    fn fmt(&self, _: &mut Formatter) -> Result<(), Error> {
-        println!(
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(
+            f,
             "api_key: {}, api_version: {}, correlation_id: {}, client_id: {}",
             self.api_key, self.api_version, self.correlation_id, self.client_id
-        );
-        Ok(())
+        )
     }
 }
 
@@ -53,15 +54,11 @@ impl FromByte for HeaderRequest {
     }
 }
 
-#[derive(Debug)]
-pub struct HeaderResponse {
-    pub correlation_id: i32,
-}
-
 #[derive(PartialEq, Debug)]
 pub enum BodyRequest {
     ApiVersions(BodyApiVersionRequest),
     Metadata(BodyMetadataRequest),
+    Unsupported(BodyUnsupportedRequest),
 }
 
 pub struct DecodedRequest {
@@ -71,17 +68,68 @@ pub struct DecodedRequest {
 }
 
 impl DecodedRequest {
-    pub fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+    pub fn decode(unmut_buf: &[u8]) -> Result<Self, DecodeError> {
+        use std::io::Cursor;
+        let buf = &mut Cursor::new(unmut_buf);
+
         let size: i32 = decode_buffer(buf)?;
         let header: HeaderRequest = decode_buffer(buf)?;
 
         let body: BodyRequest = match FromPrimitive::from_i16(header.api_key) {
-            Some(ApiKey::ApiVersions) => BodyRequest::ApiVersions(decode_buffer(buf)?),
-            Some(ApiKey::Metadata) => BodyRequest::Metadata(decode_buffer(buf)?),
+            Some(ApiKey::ApiVersions) => {
+                BodyRequest::ApiVersions(decode_buffer_with_version(buf, header.api_version)?)
+            }
+            Some(ApiKey::Metadata) => {
+                BodyRequest::Metadata(decode_buffer_with_version(buf, header.api_version)?)
+            }
             _ => return Err(DecodeError::BadData),
         };
 
         Ok(DecodedRequest { size, header, body })
+    }
+}
+
+#[derive(Debug)]
+pub struct HeaderResponse {
+    pub correlation_id: i32,
+}
+
+impl std::fmt::Display for HeaderResponse {
+    fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
+        write!(f, "correlation_id: {}", self.correlation_id,)
+    }
+}
+
+impl FromByte for HeaderResponse {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        Ok(HeaderResponse {
+            correlation_id: decode_buffer(buf)?,
+        })
+    }
+}
+
+#[derive(PartialEq, Debug)]
+pub enum BodyResponse {
+    Unsupported(BodyUnsupportedResponse),
+}
+
+pub struct DecodedResponse {
+    pub size: i32,
+    pub header: HeaderResponse,
+    pub body: BodyResponse,
+}
+
+impl DecodedResponse {
+    pub fn decode(unmut_buf: &[u8]) -> Result<Self, DecodeError> {
+        use std::io::Cursor;
+        let buf = &mut Cursor::new(unmut_buf);
+
+        let size: i32 = decode_buffer(buf)?;
+        let header: HeaderResponse = decode_buffer(buf)?;
+
+        let body: BodyResponse = BodyResponse::Unsupported(BodyUnsupportedResponse {});
+
+        Ok(DecodedResponse { size, header, body })
     }
 }
 
@@ -104,6 +152,15 @@ impl FromByte for i16 {
             //Err(DecodeError::BufferUnderflow);
         }
         Ok(buf.get_i16_be())
+    }
+}
+
+impl FromByte for bool {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        if buf.remaining() < 1 {
+            //Err(DecodeError::BufferUnderflow);
+        }
+        Ok(buf.get_i8() == 1)
     }
 }
 
@@ -133,6 +190,29 @@ impl FromByte for String {
     }
 }
 
+impl FromByte for Vec<String> {
+    fn decode(buf: &mut Buf) -> Result<Self, DecodeError> {
+        let num: i32 = decode_buffer(buf)?;
+        let mut result: Vec<String> = Vec::new();
+
+        for i in 0..num {
+            result.push(decode_buffer(buf)?);
+        }
+        Ok(result)
+    }
+}
+
 pub fn decode_buffer<F: FromByte>(buf: &mut Buf) -> Result<F, DecodeError> {
     FromByte::decode(buf)
+}
+
+pub trait FromByteWithVersion: Sized {
+    fn decode_with_version(buf: &mut Buf, version: i16) -> Result<Self, DecodeError>;
+}
+
+pub fn decode_buffer_with_version<F: FromByteWithVersion>(
+    buf: &mut Buf,
+    version: i16,
+) -> Result<F, DecodeError> {
+    FromByteWithVersion::decode_with_version(buf, version)
 }
